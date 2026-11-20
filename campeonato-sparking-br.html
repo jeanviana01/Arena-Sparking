@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classificação | Campeonato Sparking BR</title>
+<style>
+  :root { color-scheme: dark; --navy: #080e19; --panel: #111c2d; --ink: #fff8fa; --muted: #bacbdd; --red: #ff2d16; --hot: #ff9d70; }
+  * { box-sizing: border-box; }
+  body { min-height: 100vh; margin: 0; color: #fff8f0; background: linear-gradient(#080e19a8, #080e1980), url("./arena-fundo.png") center / cover fixed, var(--navy); font: 1rem/1.5 system-ui, sans-serif; }
+  .wrap { width: min(960px, calc(100% - 2rem)); margin-inline: auto; }
+  .top { background: var(--navy); border-bottom: 1px solid #3a3a47; }
+  .top .wrap { min-height: 4.5rem; display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+  .home-logo { display: block; flex: none; }
+  .brand { display: block; width: clamp(5.8rem, 15vw, 9rem); height: auto; }
+  .top a { color: #e4e9f4; text-decoration: none; font-weight: 700; }
+  .top a:hover { color: #ffcf7a; }
+  :focus-visible { outline: 2px solid #d78725; outline-offset: 4px; }
+  main { padding-block: clamp(1.6rem, 5vw, 4rem); }
+  .venue { text-align: center; margin-bottom: clamp(1.4rem, 4vw, 2.75rem); }
+  .venue h1 { margin: .35rem 0 0; font-family: Georgia, serif; font-size: clamp(1.85rem, 5.8vw, 4.3rem); line-height: 1.05; color: #fff1ce; text-shadow: 0 3px 0 #692c1d, 0 5px 18px #000; }
+  .brazil { width: 1.5rem; height: auto; vertical-align: middle; }
+  .scoreboard { position: relative; isolation: isolate; color: var(--ink); border: 1px solid #7a302c; border-radius: .65rem; background: linear-gradient(145deg, #311b25, var(--panel) 55%); box-shadow: 0 1rem 3rem #0009; }
+  .scoreboard-arcs { position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); overflow: visible; z-index: -1; pointer-events: none; fill: none; filter: drop-shadow(0 0 3px var(--red)) drop-shadow(0 0 8px var(--red)); }
+  .scoreboard-halo { stroke: var(--red); stroke-width: 6; opacity: .65; }
+  .scoreboard-core { stroke: #ff6640; stroke-width: 2; }
+  .scoreboard-sparks { stroke: var(--hot); stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 5 12 2 16 8 19 3 11 6 18; animation: scoreboard-travel 1.7s linear infinite; }
+  @keyframes scoreboard-travel { to { stroke-dashoffset: -100; } }
+  @media (prefers-reduced-motion: reduce) { .scoreboard-sparks { animation: none; } }
+  .plaque { padding: 1rem clamp(.65rem, 3vw, 1.5rem) 0; }
+  .plaque h2 { margin: 0; font-size: 1.25rem; letter-spacing: -.02em; }
+  .tournament-edition { color: var(--hot); }
+  .tournament-dates { color: var(--muted); font-size: .875rem; font-weight: 600; }
+  .board { padding: .65rem clamp(.65rem, 3vw, 1.5rem) 1rem; }
+  .board p { margin: 0 0 .6rem; color: var(--muted); font-size: .9rem; }
+  .bracket-scroll { overflow-x: auto; padding-block: .45rem .8rem; }
+  .bracket {
+    --column: 8rem;
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(var(--column), 1fr);
+    min-width: calc(var(--columns, 5) * var(--column)); min-height: clamp(16rem, 52vw, 24rem);
+    align-items: stretch; padding: .25rem;
+  }
+  .bracket-round { display: grid; grid-auto-rows: 1fr; min-width: 0; }
+  .bracket-match { display: grid; align-content: space-evenly; position: relative; min-height: 4.5rem; padding-inline: .65rem; }
+  .bracket-match::after { content: ""; position: absolute; top: 25%; bottom: 25%; right: 0; width: .7rem; border: 2px solid #ff5448b0; border-left: 0; border-radius: 0 .2rem .2rem 0; filter: drop-shadow(0 0 3px #ff2d1666); }
+  .bracket-round[data-side="right"] .bracket-match::after { right: auto; left: 0; transform: scaleX(-1); }
+  .bracket-slot { position: relative; z-index: 1; padding: .22rem .35rem; border: 1px solid #9d504a; border-radius: .35rem; background: var(--navy); font-size: .875rem; font-weight: 700; line-height: 1.25; text-align: center; overflow-wrap: anywhere; box-shadow: 0 2px 5px #0008; }
+  .bracket-slot[data-empty] { color: var(--muted); font-weight: 500; }
+  .bracket-slot[data-disqualified] { color: #ff8e83; text-decoration: line-through; }
+  .bracket-final { display: grid; align-content: center; gap: .45rem; padding-inline: .35rem; text-align: center; }
+  .bracket-final h3 { margin: .1rem 0 0; color: #ff5549; font-size: 1.15rem; font-weight: 800; }
+  .bracket-champion { isolation: isolate; border-color: #763029; color: #ffd3c1; background: #361c22; }
+  .bracket-champion .scoreboard-arcs { inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); }
+  .waitlist { margin-top: 1.35rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid #7a302c; border-radius: .65rem; background: linear-gradient(145deg, #311b25, var(--panel) 55%); }
+  .waitlist h2, .waitlist h3 { margin: 0; }
+  .waitlist h2 { font-size: 1.25rem; }
+  .waitlist h3 { font-size: 1rem; }
+  .waitlist p { margin: .35rem 0; color: var(--muted); }
+  .waitlist time { color: var(--hot); font-weight: 750; }
+  .waitlist form { display: flex; flex-wrap: wrap; align-items: end; gap: .65rem; margin-block: 1rem .6rem; }
+  .waitlist label { display: grid; gap: .25rem; flex: 1 1 14rem; max-width: 26rem; font-weight: 650; }
+  .waitlist input, .waitlist button { min-width: 0; border: 1px solid #9d504a; border-radius: .45rem; padding: .55rem .75rem; font: inherit; }
+  .waitlist input { background: var(--navy); color: var(--ink); }
+  .waitlist button { background: var(--hot); color: #291612; font-weight: 800; cursor: pointer; }
+  .waitlist ol { padding-inline-start: 1.5rem; margin: .55rem 0 0; overflow-wrap: anywhere; }
+  .waitlist-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .65rem; }
+  .waitlist-actions button { background: var(--navy); color: var(--ink); }
+  #waitlist-status[data-error] { color: #ffa28e; }
+  .whatsapp-float {
+    position: fixed; z-index: 5; right: max(1rem, env(safe-area-inset-right)); bottom: max(1rem, env(safe-area-inset-bottom));
+    display: inline-flex; align-items: center; gap: .5rem; width: auto; cursor: pointer; min-height: 2.75rem; padding: .55rem .9rem;
+    border: 1px solid #89f4ae; border-radius: 999px; background: #25d366; color: #061d10;
+    font-size: .9rem; font-weight: 800; text-decoration: none; box-shadow: 0 .35rem 1.1rem #0008;
+  }
+  .whatsapp-float:hover { background: #58ed8e; }
+  .whatsapp-float svg { display: block; width: 1.25rem; height: 1.25rem; }
+  .whatsapp-panel {
+    position: fixed; inset: auto max(1rem, env(safe-area-inset-right)) calc(max(1rem, env(safe-area-inset-bottom)) + 3.4rem) auto;
+    width: min(20rem, calc(100% - 2rem)); margin: 0; padding: 1rem;
+    border: 1px solid #286042; border-radius: .85rem; background: #0d2018; color: #f1fff5;
+    box-shadow: 0 .55rem 2rem #000a;
+  }
+  .whatsapp-panel-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+  .whatsapp-panel h2 { margin: 0; font-size: 1.05rem; }
+  .whatsapp-panel p { margin: .75rem 0; padding: .5rem .65rem; border-radius: .45rem; background: #173629; }
+  .whatsapp-panel-header button { width: auto; border: 0; padding: .2rem .5rem; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+  .whatsapp-panel a { display: inline-block; padding: .5rem .75rem; border-radius: .45rem; background: #25d366; color: #061d10; font-weight: 750; text-decoration: none; }
+  body { padding-bottom: 4rem; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="home-logo" href="./index.html" aria-label="Página inicial do ArenaSparking"><img class="brand" src="./sparking-zero-logo.png" width="372" height="131" alt="Dragon Ball Sparking! Zero"></a>
+    <a href="./index.html">Voltar ao ArenaSparking</a>
+  </div>
+</header>
+<main class="wrap">
+  <header class="venue">
+    <svg class="brazil" viewBox="0 0 28 20" width="28" height="20" aria-hidden="true">
+      <rect width="28" height="20" rx="2" fill="#009b3a"/>
+      <path d="M14 2 25 10 14 18 3 10Z" fill="#ffdf00"/>
+      <circle cx="14" cy="10" r="4.7" fill="#002776"/>
+      <path d="M9.6 9a9 9 0 0 1 8.8 2.5" fill="none" stroke="#fff" stroke-width="1.2"/>
+    </svg>
+    <h1>Campeonato Sparking BR</h1>
+  </header>
+  <section class="scoreboard" aria-labelledby="ranking-title">
+    <svg class="scoreboard-arcs" viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <filter id="scoreboard-electric" x="-10%" y="-15%" width="120%" height="130%">
+          <feTurbulence type="turbulence" baseFrequency=".19 .24" numOctaves="2" seed="8" result="noise"/>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <rect id="scoreboard-outline" x="3" y="3" width="394" height="194" rx="5" pathLength="100" vector-effect="non-scaling-stroke"/>
+      </defs>
+      <g filter="url(#scoreboard-electric)">
+        <use class="scoreboard-halo" href="#scoreboard-outline"/>
+        <use class="scoreboard-core" href="#scoreboard-outline"/>
+        <use class="scoreboard-sparks" href="#scoreboard-outline"/>
+      </g>
+    </svg>
+    <header class="plaque">
+      <h2 id="ranking-title">Classificação <span class="tournament-edition">· Torneio 001</span>
+        <span class="tournament-dates">(início a definir · fim a definir)</span>
+      </h2>
+    </header>
+    <div class="board">
+      <p id="demo-note" hidden><strong>Demonstração</strong> · Oito lutadores e resultados fictícios.</p>
+      <p>Chave eliminatória montada pela ordem de inscrição.</p>
+      <div class="bracket-scroll" tabindex="0" role="region" aria-labelledby="ranking-title">
+        <div id="ranking">Carregando classificação…</div>
+      </div>
+    </div>
+  </section>
+  <section class="waitlist" aria-labelledby="next-title">
+    <h2 id="next-title">Próximo campeonato</h2>
+    <p>Data prevista: <time datetime="2027-01">Janeiro de 2027</time></p>
+    <form id="waitlist-form" aria-describedby="waitlist-description">
+      <label>Nick do jogo <input id="waitlist-nick" name="nick" required maxlength="64"></label>
+      <button type="submit">Entrar na lista de espera</button>
+    </form>
+    <p id="waitlist-description">As inscrições desta lista ficam salvas neste navegador.</p>
+    <p id="waitlist-status" role="status"></p>
+    <h3>Lista de espera</h3>
+    <p id="waitlist-empty">Nenhum lutador inscrito.</p>
+    <ol id="waitlist-entries"></ol>
+    <div class="waitlist-actions">
+      <button id="waitlist-more" type="button" aria-controls="waitlist-entries" hidden>Ver mais</button>
+      <button id="waitlist-less" type="button" aria-controls="waitlist-entries" hidden>Ver menos</button>
+    </div>
+  </section>
+</main>
+<script src="./arena-api.js"></script>
+<script>
+  'use strict';
+  const ranking = document.getElementById('ranking');
+  const demoNames = ['Akira do Trovão', 'Hana da Aurora', 'Ryo Punho Solar', 'Mei Vento de Jade',
+    'Takeshi Rocha', 'Yuna Faísca', 'Daichi do Ki', 'Sora Vento Norte'];
+  const demo = {
+    players: demoNames.map((name) => ({ name })),
+    fights: [[0, 7], [3, 4], [1, 6], [2, 5], [0, 3], [1, 2], [2, 3], [0, 1]]
+      .map(([winner, loser]) => ({ winner: demoNames[winner], loser: demoNames[loser] }))
+  };
+
+  function buildRounds({ players, fights }) {
+    const size = Math.max(8, 2 ** Math.ceil(Math.log2(players.length || 1)));
+    let seeds = [0];
+    for (let width = 2; width <= size; width *= 2) {
+      seeds = seeds.flatMap((seed) => [seed, width - 1 - seed]);
+    }
+
+    const byName = new Map(players.map((player) => [player.name, player]));
+    const encounters = new Map(players.map(({ name }) => [name, new Map()]));
+    for (const fight of fights) {
+      if (fight.winner === fight.loser || !byName.has(fight.winner) || !byName.has(fight.loser)) continue;
+      encounters.get(fight.winner).set(fight.loser, fight.winner);
+      encounters.get(fight.loser).set(fight.winner, fight.winner);
+    }
+
+    // undefined marks an undecided slot. null marks a confirmed empty slot.
+    let slots = seeds.map((seed) => players[seed] ?? null);
+    const rounds = [];
+    while (slots.length > 1) {
+      const matches = [];
+      for (let i = 0; i < slots.length; i += 2) {
+        const first = slots[i];
+        const second = slots[i + 1];
+        const eligible = (player) => player?.disqualified ? null : player;
+        const left = eligible(first);
+        const right = eligible(second);
+        let winner;
+        if (left !== undefined && right !== undefined) {
+          if (left === null || right === null) winner = left ?? right;
+          else winner = byName.get(encounters.get(left.name).get(right.name));
+        }
+        matches.push({ first, second, winner });
+      }
+      rounds.push(matches);
+      slots = matches.map((match) => match.winner);
+    }
+    return rounds;
+  }
+
+  function makeSlot(player, champion = false) {
+    const slot = document.createElement('div');
+    slot.className = champion ? 'bracket-slot bracket-champion' : 'bracket-slot';
+    if (!player) slot.setAttribute('data-empty', '');
+    if (player?.disqualified) {
+      slot.setAttribute('data-disqualified', '');
+      slot.title = 'Desclassificado';
+    }
+    slot.textContent = player?.name ?? (player === null ? 'Sem adversário' : 'A definir');
+    if (champion) {
+      const arcs = document.querySelector('.scoreboard > .scoreboard-arcs').cloneNode(true);
+      arcs.querySelector('defs').remove();
+      slot.prepend(arcs);
+    }
+    return slot;
+  }
+
+  function makeRound(matches, side, label) {
+    const column = document.createElement('div');
+    column.className = 'bracket-round';
+    column.dataset.side = side;
+    column.setAttribute('role', 'group');
+    column.setAttribute('aria-label', label);
+    for (const { first, second } of matches) {
+      const match = document.createElement('div');
+      match.className = 'bracket-match';
+      match.append(makeSlot(first), makeSlot(second));
+      column.append(match);
+    }
+    return column;
+  }
+
+  function render(data) {
+    if (!Array.isArray(data?.players) || !Array.isArray(data.fights)) throw new Error('Classificação inválida');
+    const showDemo = data.players.length === 0 && data.fights.length === 0;
+    document.getElementById('demo-note').hidden = !showDemo;
+    const rounds = buildRounds(showDemo ? demo : data);
+    const final = rounds.pop();
+    const [{ first, second, winner }] = final;
+    const bracket = document.createElement('div');
+    bracket.className = 'bracket';
+    bracket.style.setProperty('--columns', rounds.length * 2 + 1);
+    rounds.forEach((matches, index) => {
+      bracket.append(makeRound(matches.slice(0, matches.length / 2), 'left', 'Lado esquerdo · fase ' + (index + 1)));
+    });
+
+    const center = document.createElement('div');
+    center.className = 'bracket-final';
+    const finalTitle = document.createElement('h3');
+    finalTitle.textContent = 'Final';
+    const championTitle = document.createElement('h3');
+    championTitle.textContent = 'Campeão';
+    center.append(championTitle, makeSlot(winner, true), finalTitle, makeSlot(first), makeSlot(second));
+    bracket.append(center);
+
+    for (let index = rounds.length - 1; index >= 0; index--) {
+      const matches = rounds[index];
+      bracket.append(makeRound(matches.slice(matches.length / 2), 'right', 'Lado direito · fase ' + (index + 1)));
+    }
+    ranking.replaceChildren(bracket);
+  }
+
+  async function load() {
+    try {
+      let data;
+      if (arenaApi.enabled) {
+        data = await arenaApi.request('championship');
+        waiting = data.waitlist;
+        renderWaitlist();
+      } else if (location.protocol === 'file:') {
+        const saved = localStorage.getItem('arenasparking.championship.v1');
+        data = saved ? JSON.parse(saved) : { players: [], fights: [] };
+      } else {
+        const response = await fetch('./campeonato-resultados.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Resultados indisponíveis');
+        data = await response.json();
+      }
+      render(data);
+      applyWaitlistSelection(data.january2027Selection);
+    } catch {
+      ranking.textContent = 'A classificação está indisponível no momento.';
+    }
+  }
+
+  const waitlistKey = 'arenasparking.championship.waitlist.2027-01';
+  const waitlistForm = document.getElementById('waitlist-form');
+  const waitlistNick = document.getElementById('waitlist-nick');
+  const waitlistStatus = document.getElementById('waitlist-status');
+  const waitlistEntries = document.getElementById('waitlist-entries');
+  const waitlistEmpty = document.getElementById('waitlist-empty');
+  const waitlistMore = document.getElementById('waitlist-more');
+  const waitlistLess = document.getElementById('waitlist-less');
+  const nickCollator = new Intl.Collator('pt-BR', { sensitivity: 'base' });
+  const waitlistPageSize = 5;
+  let waitlistLimit = waitlistPageSize;
+  let waiting = [];
+  let selected = [];
+
+  function isSelected(nick) {
+    return selected.some((entry) => nickCollator.compare(entry, nick) === 0);
+  }
+
+  function applyWaitlistSelection(nicks) {
+    if (!Array.isArray(nicks) || nicks.length !== 8 ||
+        nicks.some((nick, index) => typeof nick !== 'string' || !nick.trim() ||
+          nicks.slice(0, index).some((other) => nickCollator.compare(other, nick) === 0))) return;
+    selected = nicks;
+    renderWaitlist();
+  }
+
+  function waitlistMessage(text, error = false) {
+    waitlistStatus.textContent = text;
+    waitlistStatus.toggleAttribute('data-error', error);
+  }
+
+  function renderWaitlist() {
+    const pending = waiting.filter((nick) => !isSelected(nick));
+    waitlistEntries.replaceChildren();
+    waitlistEmpty.hidden = pending.length > 0;
+    waitlistMore.hidden = pending.length <= waitlistLimit;
+    waitlistLess.hidden = waitlistLimit <= waitlistPageSize || pending.length <= waitlistPageSize;
+    for (const nick of pending.slice(0, waitlistLimit)) {
+      const entry = document.createElement('li');
+      entry.textContent = nick;
+      waitlistEntries.append(entry);
+    }
+  }
+
+  waitlistMore.addEventListener('click', () => {
+    waitlistLimit += waitlistPageSize;
+    renderWaitlist();
+    if (waitlistMore.hidden) waitlistLess.focus();
+  });
+  waitlistLess.addEventListener('click', () => {
+    waitlistLimit = Math.max(waitlistPageSize, waitlistLimit - waitlistPageSize);
+    renderWaitlist();
+    if (waitlistLess.hidden) waitlistMore.focus();
+  });
+
+  if (!arenaApi.enabled) try {
+    const saved = localStorage.getItem(waitlistKey);
+    if (saved !== null) {
+      const entries = JSON.parse(saved);
+      if (!Array.isArray(entries) || entries.some((nick) => typeof nick !== 'string' || !nick.trim())) {
+        throw new Error('Lista inválida');
+      }
+      waiting = entries;
+    }
+  } catch {
+    waitlistMessage('Não foi possível carregar a lista deste navegador.', true);
+    waitlistForm.querySelector('button').disabled = true;
+  }
+  renderWaitlist();
+
+  waitlistForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const nick = waitlistNick.value.trim().replace(/\s+/g, ' ');
+    if (isSelected(nick)) {
+      waitlistMessage('Esse nick já foi selecionado para o próximo campeonato.', true);
+      return;
+    }
+    if (!nick || waiting.some((entry) => nickCollator.compare(entry, nick) === 0)) {
+      waitlistMessage(nick ? 'Esse nick já está na lista de espera.' : 'Informe seu nick do jogo.', true);
+      waitlistNick.focus();
+      return;
+    }
+    if (arenaApi.enabled) {
+      const submit = waitlistForm.querySelector('[type="submit"]');
+      submit.disabled = true;
+      try {
+        const data = await arenaApi.request('waitlist', { body: { nick } });
+        waiting = data.waitlist;
+        renderWaitlist();
+        waitlistNick.value = '';
+        waitlistMessage('Nick adicionado à lista de espera.');
+      } catch (error) {
+        waitlistMessage(error.message, true);
+      } finally {
+        submit.disabled = false;
+      }
+      return;
+    }
+    const next = [...waiting, nick];
+    try {
+      localStorage.setItem(waitlistKey, JSON.stringify(next));
+    } catch {
+      waitlistMessage('Não foi possível salvar o nick neste navegador.', true);
+      return;
+    }
+    waiting = next;
+    renderWaitlist();
+    waitlistNick.value = '';
+    waitlistMessage('Nick adicionado à lista de espera.');
+  });
+  if (arenaApi.enabled) document.getElementById('waitlist-description').textContent = 'As inscrições entram na fila compartilhada do próximo campeonato.';
+  load();
+</script>
+<button class="whatsapp-float" type="button" popovertarget="whatsapp-panel" aria-label="Abrir cadastro pelo WhatsApp">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M21 11.5a9 9 0 0 1-13.2 8L3 21l1.5-4.8A9 9 0 1 1 21 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M9.2 7.4c-.2-.5-.5-.5-.8-.5-.5 0-1.3.6-1.3 1.7 0 2.4 3.1 5.6 5.5 6.6 1.4.6 2.5.8 3.2.2.5-.4.8-1.1.7-1.5-.1-.2-.4-.3-.8-.5l-1.5-.7c-.3-.2-.5-.2-.7.1l-.7.8c-.2.2-.4.2-.7.1-1-.4-2.4-1.6-2.9-2.6-.1-.3-.1-.5.1-.7l.6-.7c.2-.2.2-.4.1-.7l-.8-1.6Z" fill="currentColor"/>
+  </svg>
+  Se cadastre
+</button>
+<section id="whatsapp-panel" class="whatsapp-panel" popover aria-labelledby="whatsapp-title">
+  <div class="whatsapp-panel-header"><h2 id="whatsapp-title">WhatsApp</h2><button type="button" popovertarget="whatsapp-panel" popovertargetaction="hide" aria-label="Fechar">×</button></div>
+  <p>Se cadastre</p>
+  <a href="https://wa.me/?text=Se%20cadastre" target="_blank" rel="noopener noreferrer">Abrir no WhatsApp</a>
+</section>
+</body>
+</html>

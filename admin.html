@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestão do ArenaSparking</title>
+<style>
+  :root { color-scheme: dark; background: #080e19; color: #fff8fa; font: 1rem/1.5 system-ui; }
+  body { width: min(65rem,calc(100% - 2rem)); margin: 2rem auto; }
+  a { color: #8bddff; } h2 { margin: 0; font-size: 1.2rem; }
+  section { padding: 1rem; background: #111c2d; border: 1px solid #324c63; border-radius: .65rem; margin-block: .8rem; }
+  form { display: grid; gap: .65rem; margin-top: .75rem; }
+  label { display: grid; gap: .3rem; } input,select,button { font: inherit; padding: .45rem .6rem; border: 1px solid #405b77; border-radius: .35rem; }
+  input,select { background: #080e19; color: inherit; } button { justify-self: start; background: #ffbe55; color: #201307; cursor: pointer; font-weight: 700; }
+  button:disabled { opacity: .5; cursor: default; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,18rem),1fr)); gap: .8rem; }
+  #status { min-height: 1.5rem; color: #a9f0b6; } #status[data-error] { color: #ff9f93; }
+  ol { overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<a href="./index.html">ArenaSparking</a>
+<h1>Gestão do ArenaSparking</h1>
+<section>
+  <h2>Acesso administrativo</h2>
+  <form id="login">
+    <label>Chave administrativa <input name="token" type="password" required autocomplete="off"></label>
+    <button>Entrar</button>
+  </form>
+  <p id="status" role="status"></p>
+</section>
+<div id="admin" hidden>
+  <div class="grid">
+    <section>
+      <h2>Resultados da arena</h2>
+      <form data-action="arena-fight">
+        <label>Vencedor <select name="winner" data-options="arena" required></select></label>
+        <label>Derrotado <select name="loser" data-options="arena" required></select></label>
+        <button>Registrar luta</button>
+      </form>
+    </section>
+    <section>
+      <h2>Inscrições do campeonato</h2>
+      <form data-action="tournament-player">
+        <label>Nick do participante <input name="nick" maxlength="64" required></label>
+        <button>Cadastrar participante</button>
+      </form>
+    </section>
+    <section>
+      <h2>Combates do campeonato</h2>
+      <form data-action="tournament-fight">
+        <label>Vencedor <select name="winner" data-options="active" required></select></label>
+        <label>Derrotado <select name="loser" data-options="active" required></select></label>
+        <button>Registrar combate</button>
+      </form>
+    </section>
+    <section>
+      <h2>Situação do participante</h2>
+      <form data-action="status">
+        <label>Participante <select name="nick" data-options="cup" required></select></label>
+        <label>Ação <select name="action"><option value="disqualify">Desclassificar</option><option value="restore">Reintegrar</option></select></label>
+        <label>Motivo público <input name="reason" maxlength="120"></label>
+        <button>Atualizar situação</button>
+      </form>
+    </section>
+    <section>
+      <h2>Próximo campeonato · Janeiro de 2027</h2>
+      <p id="selection-count"></p>
+      <ol id="waiting"></ol>
+      <form data-action="select-next"><button id="select-next">Confirmar os oito primeiros inscritos</button></form>
+    </section>
+    <section>
+      <h2>Tabela de prêmios</h2>
+      <ol><li>R$ 100,00</li><li>R$ 50,00</li><li>R$ 20,00</li></ol>
+    </section>
+  </div>
+</div>
+<script src="./arena-api.js"></script>
+<script>
+  const get = (id) => document.getElementById(id);
+  let adminToken = '';
+  function report(message, error = false) {
+    const status = get('status');
+    status.textContent = message;
+    status.toggleAttribute('data-error', error);
+  }
+  function render(data) {
+    const { ranking, championship, waitlist } = data;
+    const options = {
+      arena: ranking.players,
+      active: championship.players.filter((p) => !p.disqualified).map((p) => p.name),
+      cup: championship.players.map((p) => p.name)
+    };
+    for (const select of document.querySelectorAll('[data-options]')) {
+      const names = options[select.dataset.options];
+      select.replaceChildren(new Option('Selecione um participante', '', true, true));
+      select.options[0].disabled = true;
+      for (const name of names) select.add(new Option(name, name));
+    }
+    const selected = championship.january2027Selection;
+    get('selection-count').textContent = selected.length
+      ? 'Selecionados: ' + selected.join(', ')
+      : waitlist.length + ' na fila, em ordem de inscrição.';
+    get('waiting').replaceChildren(...waitlist.map((name) => {
+      const item = document.createElement('li');
+      item.textContent = name;
+      return item;
+    }));
+    get('select-next').disabled = selected.length > 0 || waitlist.length < 8;
+  }
+  get('login').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const token = new FormData(event.currentTarget).get('token');
+    try {
+      const data = await arenaApi.request('admin', { token });
+      adminToken = token;
+      render(data);
+      get('admin').hidden = false;
+      event.target.reset();
+      report('Acesso administrativo liberado.');
+    } catch (error) {
+      adminToken = '';
+      get('admin').hidden = true;
+      report(error.message, true);
+    }
+  });
+  for (const form of document.querySelectorAll('form[data-action]')) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (form.dataset.action === 'select-next' && !confirm('Confirmar e retirar da fila os oito primeiros inscritos?')) return;
+      const body = Object.fromEntries(new FormData(form));
+      if (form.dataset.action !== 'status') body.action = form.dataset.action;
+      const button = form.querySelector('button');
+      button.disabled = true;
+      try {
+        const data = await arenaApi.request('admin', { body, token: adminToken });
+        form.reset();
+        render(data);
+        report('Atualização salva no servidor.');
+      } catch (error) {
+        report(error.message, true);
+      } finally {
+        if (form.dataset.action !== 'select-next' || get('status').hasAttribute('data-error')) button.disabled = false;
+      }
+    });
+  }
+  if (!arenaApi.enabled) report('Configure a URL da API ou abra pelo endereço da prévia local.', true);
+</script>
+</body>
+</html>

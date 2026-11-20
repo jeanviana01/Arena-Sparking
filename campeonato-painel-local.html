@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestão local | Campeonato Sparking BR</title>
+<style>
+  :root { color-scheme: dark; --bg: #080e19; --panel: #111c2d; --line: #2b4059; --ink: #fff8fa; --muted: #bacbdd; --green: #93ff63; --gold: #ffbe55; }
+  * { box-sizing: border-box; }
+  body { margin: 0; isolation: isolate; color: var(--ink); background: var(--bg); font: 1rem/1.5 system-ui, sans-serif; }
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: url("./arena-fundo.png") var(--background-focus, center) center / cover; }
+  .wrap { width: min(1200px, calc(100% - clamp(2rem, 13vw, 16rem))); margin: auto; }
+  header { background: var(--bg); border-bottom: 1px solid var(--line); }
+  .top { min-height: 4.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .brand { display: block; width: clamp(5.8rem, 15vw, 9rem); height: auto; }
+  header a { color: var(--muted); font-weight: 700; text-decoration: none; }
+  header a:hover { color: var(--gold); }
+  main { padding-block: 1.5rem 2rem; }
+  h1, h2, p { margin: 0; }
+  h1 { margin-bottom: 1rem; font-size: clamp(1.35rem, 3.3vw, 2.75rem); line-height: 1.1; letter-spacing: -.025em; text-shadow: 0 2px 10px #000; }
+  h2 { font-size: 1.25rem; letter-spacing: -.02em; }
+  .panel { background: linear-gradient(145deg, #18273e, var(--panel) 55%); border: 1px solid var(--line); border-radius: .45rem; padding: clamp(1rem, 3vw, 1.5rem); margin-bottom: 1rem; min-width: 0; }
+  .grid, .prizes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .8rem; }
+  .prizes { list-style: none; padding: 0; margin: .7rem 0 0; }
+  .prizes li { --prize: var(--gold); position: relative; isolation: isolate; padding: .75rem; border: 1px solid transparent; background: linear-gradient(145deg, color-mix(in srgb, var(--prize) 18%, var(--bg)), var(--bg) 78%); border-radius: .45rem; }
+  .prizes li:nth-child(2) { --prize: #36dcff; }
+  .prizes li:nth-child(3) { --prize: #ff814a; }
+  .prizes strong { display: block; font-size: 1.5rem; color: var(--prize); }
+  .prize-arcs {
+    position: absolute; inset: -7px; width: calc(100% + 14px); height: calc(100% + 14px);
+    overflow: visible; z-index: -1; pointer-events: none; fill: none;
+    filter: drop-shadow(0 0 3px var(--prize)) drop-shadow(0 0 8px var(--prize));
+    animation: prize-charge 2.6s ease-in-out infinite alternate;
+  }
+  .prize-halo { stroke: var(--prize); stroke-width: 6; opacity: .72; }
+  .prize-edge { stroke: var(--prize); stroke-width: 3.5; }
+  .prize-core { stroke: color-mix(in srgb, var(--prize) 55%, white); stroke-width: 1.35; }
+  .prize-sparks { stroke: white; stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 5 12 2 16 8 19 3 11 6 18; animation: prize-travel 1.7s linear infinite; }
+  .prizes li:nth-child(2) .prize-sparks { animation-delay: -.75s; }
+  .prizes li:nth-child(3) .prize-sparks { animation-delay: -1.3s; }
+  @keyframes prize-travel { to { stroke-dashoffset: -100; } }
+  @keyframes prize-charge {
+    0%, 100% { opacity: .82; }
+    36%, 73% { opacity: 1; }
+    55% { opacity: .9; }
+  }
+  @media (prefers-reduced-motion: reduce) { .prize-arcs, .prize-sparks { animation: none; } }
+  form { display: grid; gap: .5rem; margin: .5rem 0 1rem; align-content: start; }
+  label { display: grid; gap: .25rem; font-weight: 650; }
+  input, select, textarea, button { font: inherit; border: 1px solid #415a77; border-radius: .55rem; padding: .55rem .75rem; min-width: 0; }
+  input, select, textarea { color: var(--ink); background: var(--bg); }
+  button { justify-self: start; cursor: pointer; color: #241307; background: var(--gold); font-weight: 750; }
+  button:disabled { opacity: .45; cursor: default; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .muted, th { color: var(--muted); }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin-top: .5rem; text-align: left; }
+  td, th { padding: .5rem; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+  ul { padding-inline-start: 1.3rem; }
+  #notice { margin-top: .6rem; color: var(--green); }
+  #notice[data-error] { color: #ff9a91; }
+  @media (max-width: 650px) {
+    .wrap { width: calc(100% - 2rem); }
+    body::before { --background-focus: 28%; }
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap top">
+  <img class="brand" src="./sparking-zero-logo.png" width="372" height="131" alt="Dragon Ball Sparking! Zero">
+  <a href="./index.html">Voltar ao ArenaSparking</a>
+</div></header>
+<main class="wrap">
+  <h1><span aria-hidden="true">🇧🇷</span> Campeonato Sparking BR</h1>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <filter id="prize-electric" x="-20%" y="-45%" width="140%" height="190%">
+        <feTurbulence type="turbulence" baseFrequency=".16 .24" numOctaves="2" seed="8" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <rect id="prize-outline" x="10" y="10" width="300" height="76" rx="3" pathLength="100" vector-effect="non-scaling-stroke"/>
+      <g id="prize-frame" filter="url(#prize-electric)">
+        <use class="prize-halo" href="#prize-outline"/>
+        <use class="prize-edge" href="#prize-outline"/>
+        <use class="prize-core" href="#prize-outline"/>
+        <use class="prize-sparks" href="#prize-outline"/>
+      </g>
+    </defs>
+  </svg>
+  <section class="panel" aria-labelledby="premios">
+    <h2 id="premios">Tabela de prêmios</h2>
+    <ol class="prizes">
+      <li><svg class="prize-arcs" viewBox="0 0 320 96" preserveAspectRatio="none" aria-hidden="true"><use href="#prize-frame"/></svg>1º lugar <strong>R$ 100,00</strong></li>
+      <li><svg class="prize-arcs" viewBox="0 0 320 96" preserveAspectRatio="none" aria-hidden="true"><use href="#prize-frame"/></svg>2º lugar <strong>R$ 50,00</strong></li>
+      <li><svg class="prize-arcs" viewBox="0 0 320 96" preserveAspectRatio="none" aria-hidden="true"><use href="#prize-frame"/></svg>3º lugar <strong>R$ 20,00</strong></li>
+    </ol>
+  </section>
+  <section class="panel" id="gestao" aria-labelledby="gestao-title" hidden>
+    <h2 id="gestao-title">Gestão local do campeonato</h2>
+    <div class="grid">
+      <form id="participant-form">
+        <label>Nick do participante <input id="participant" maxlength="64" required></label>
+        <button>Adicionar participante</button>
+      </form>
+      <form id="fight-form">
+        <label>Vencedor <select id="winner" required></select></label>
+        <label>Derrotado <select id="loser" required></select></label>
+        <button id="save-fight">Registrar combate</button>
+      </form>
+      <form id="status-form">
+        <label>Participante <select id="status-player" required></select></label>
+        <label>Ação <select id="action"><option value="disqualify">Desclassificar</option><option value="restore">Reintegrar</option></select></label>
+        <label>Motivo público (opcional) <input id="reason" maxlength="120"></label>
+        <button id="save-status">Aplicar</button>
+      </form>
+    </div>
+    <form id="selection-form">
+      <label>Selecionados para janeiro de 2027
+        <textarea id="selection-nicks" rows="5" maxlength="600" placeholder="Informe os oito primeiros nicks da lista, um por linha." required></textarea>
+      </label>
+      <button type="submit">Confirmar oito selecionados</button>
+    </form>
+    <button id="export" type="button">Exportar resultados públicos</button>
+    <p class="muted">Publique o arquivo exportado na mesma pasta desta página para atualizar a vitrine.</p>
+    <p id="notice" role="status"></p>
+  </section>
+  <section class="panel" aria-labelledby="tabela">
+    <h2 id="tabela">Classificação</h2>
+    <p class="muted">Mais vitórias primeiro. Em caso de empate, menos derrotas.</p>
+    <div class="scroll">
+      <table aria-labelledby="tabela">
+        <thead><tr><th scope="col">Pos.</th><th scope="col">Participante</th><th scope="col">Vitórias</th><th scope="col">Derrotas</th></tr></thead>
+        <tbody id="ranking"></tbody>
+      </table>
+    </div>
+  </section>
+  <div class="grid">
+    <section class="panel"><h2>Combates registrados</h2><ul id="fights"></ul></section>
+    <section class="panel"><h2>Desclassificados</h2><ul id="disqualified"></ul></section>
+  </div>
+</main>
+<script>
+  'use strict';
+  const get = (id) => document.getElementById(id);
+  const key = 'arenasparking.championship.v1';
+  const publicFile = 'campeonato-resultados.json';
+  const local = location.protocol === 'file:';
+  const collator = new Intl.Collator('pt-BR', { sensitivity: 'base' });
+  let state = { players: [], fights: [] };
+
+  function validate(data) {
+    if (!Array.isArray(data?.players) || !Array.isArray(data.fights)) throw new Error('Dados inválidos');
+    const names = new Set();
+    for (const player of data.players) {
+      if (typeof player?.name !== 'string' || !player.name.trim() || names.has(player.name) ||
+          typeof player.disqualified !== 'boolean' || typeof player.reason !== 'string') throw new Error('Participante inválido');
+      names.add(player.name);
+    }
+    for (const fight of data.fights) {
+      if (!fight || !names.has(fight.winner) || !names.has(fight.loser) || fight.winner === fight.loser) throw new Error('Combate inválido');
+    }
+    return data;
+  }
+
+  function notify(text, error = false) {
+    get('notice').textContent = text;
+    get('notice').toggleAttribute('data-error', error);
+  }
+
+  function save(next, text) {
+    try {
+      localStorage.setItem(key, JSON.stringify(next));
+    } catch {
+      notify('O navegador não conseguiu salvar os dados.', true);
+      return false;
+    }
+    state = next;
+    render();
+    notify(text);
+    return true;
+  }
+
+  function fillSelect(id, players) {
+    const select = get(id);
+    const previous = select.value;
+    select.replaceChildren(new Option('Selecione um participante', '', true, true));
+    select.options[0].disabled = true;
+    for (const { name } of players) select.add(new Option(name, name));
+    if (players.some(({ name }) => name === previous)) select.value = previous;
+  }
+
+  function renderList(id, entries, empty) {
+    const list = get(id);
+    list.replaceChildren();
+    for (const text of entries.length ? entries : [empty]) {
+      const item = document.createElement('li');
+      item.textContent = text;
+      list.append(item);
+    }
+  }
+
+  function render() {
+    const { players, fights } = state;
+    const active = players.filter((player) => !player.disqualified);
+    if (local) {
+      fillSelect('winner', active);
+      fillSelect('loser', active);
+      fillSelect('status-player', players);
+      get('save-fight').disabled = active.length < 2;
+      get('save-status').disabled = players.length === 0;
+    }
+
+    const totals = new Map(players.map(({ name }) => [name, { wins: 0, losses: 0 }]));
+    for (const { winner, loser } of fights) {
+      totals.get(winner).wins++;
+      totals.get(loser).losses++;
+    }
+    const ranked = active.map(({ name }) => ({ name, ...totals.get(name) }))
+      .sort((a, b) => b.wins - a.wins || a.losses - b.losses || collator.compare(a.name, b.name));
+    const table = get('ranking');
+    table.replaceChildren();
+    if (ranked.length === 0) {
+      const cell = table.insertRow().insertCell();
+      cell.colSpan = 4;
+      cell.textContent = 'Nenhum participante classificado.';
+    }
+    let position = 0;
+    ranked.forEach(({ name, wins, losses }, index) => {
+      const previous = ranked[index - 1];
+      if (!previous || previous.wins !== wins || previous.losses !== losses) position = index + 1;
+      const row = table.insertRow();
+      [position, name, wins, losses].forEach((value) => { row.insertCell().textContent = value; });
+    });
+
+    renderList('fights', [...fights].reverse().map(({ winner, loser }) => winner + ' venceu ' + loser), 'Nenhum combate registrado.');
+    renderList('disqualified', players.filter((player) => player.disqualified)
+      .map(({ name, reason }) => reason ? name + ' — ' + reason : name), 'Nenhum participante desclassificado.');
+  }
+
+  async function load() {
+    if (local) {
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved !== null) state = validate(JSON.parse(saved));
+        if (Array.isArray(state.january2027Selection)) {
+          get('selection-nicks').value = state.january2027Selection.join('\n');
+        }
+        get('gestao').hidden = false;
+      } catch {
+        get('gestao').hidden = false;
+        get('gestao').inert = true;
+        notify('Não foi possível carregar os dados locais do campeonato.', true);
+      }
+    } else {
+      try {
+        const response = await fetch(publicFile, { cache: 'no-store' });
+        if (!response.ok) throw new Error('Resultados indisponíveis');
+        state = validate(await response.json());
+      } catch {
+        render();
+        const warning = document.createElement('p');
+        warning.className = 'muted';
+        warning.textContent = 'Os resultados publicados estão indisponíveis no momento.';
+        get('tabela').after(warning);
+        return;
+      }
+    }
+    render();
+  }
+
+  if (local) {
+    get('participant-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = get('participant');
+      const name = input.value.trim();
+      if (!name || state.players.some((player) => collator.compare(player.name, name) === 0)) {
+        notify('Informe um nick válido que ainda não esteja cadastrado.', true);
+        return;
+      }
+      if (save({ ...state, players: [...state.players, { name, disqualified: false, reason: '' }] }, 'Participante adicionado.')) input.value = '';
+    });
+    get('fight-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const winner = get('winner').value;
+      const loser = get('loser').value;
+      const active = (name) => state.players.some((player) => player.name === name && !player.disqualified);
+      if (winner === loser || !active(winner) || !active(loser)) {
+        notify('Selecione dois participantes ativos e diferentes.', true);
+        return;
+      }
+      if (save({ ...state, fights: [...state.fights, { winner, loser }] }, 'Combate registrado.')) {
+        get('winner').value = '';
+        get('loser').value = '';
+      }
+    });
+    get('status-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = get('status-player').value;
+      const disqualified = get('action').value === 'disqualify';
+      const reason = get('reason');
+      const player = state.players.find((entry) => entry.name === name);
+      if (!player || player.disqualified === disqualified) {
+        notify('Selecione um participante com situação compatível com essa ação.', true);
+        return;
+      }
+      const players = state.players.map((entry) => entry === player
+        ? { ...entry, disqualified, reason: disqualified ? reason.value.trim() : '' }
+        : entry);
+      if (save({ ...state, players }, disqualified ? 'Participante desclassificado.' : 'Participante reintegrado.')) reason.value = '';
+    });
+    get('selection-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = get('selection-nicks');
+      const nicks = input.value.split(/\r?\n/).map((nick) => nick.trim().replace(/\s+/g, ' ')).filter(Boolean);
+      const unique = nicks.every((nick, index) => nicks.findIndex((other) => collator.compare(other, nick) === 0) === index);
+      if (nicks.length !== 8 || !unique || nicks.some((nick) => nick.length > 64)) {
+        notify('Informe oito nicks diferentes, um por linha, com até 64 caracteres cada.', true);
+        return;
+      }
+      if (save({ ...state, january2027Selection: nicks }, 'Oito selecionados confirmados. Exporte os resultados para publicar a seleção.')) {
+        input.value = nicks.join('\n');
+      }
+    });
+    get('export').addEventListener('click', () => {
+      const url = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = publicFile;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+  }
+  load();
+</script>
+</body>
+</html>

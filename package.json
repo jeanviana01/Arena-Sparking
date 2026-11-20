@@ -1,0 +1,7 @@
+{
+  "name": "arenasparking",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": { "start": "node backend/server.mjs" }
+}

@@ -1,5 +1,7 @@
 # ArenaSparking
 
+[Demonstração no GitHub Pages](https://jeanviana01.github.io/Arena-Sparking/)
+
 O frontend fica na raiz do repositório, com o index.html como entrada. O GitHub Pages publica os arquivos estáticos. A API Node.js fica em backend/server.mjs e usa SQLite para guardar a arena, os combates, a chave e a fila de espera.
 
 ## Prévia local
@@ -29,9 +31,4 @@ Com o backend ativo, acesse /admin.html no domínio dele para administrar result
 
 ## GitHub Pages
 
-1. Suba os arquivos deste pacote para a branch main de um repositório no GitHub.
-2. Em Settings → Secrets and variables → Actions → Variables, crie ARENA_API_URL com a URL HTTPS do backend, sem /api.
-3. Em Settings → Pages, escolha GitHub Actions como fonte.
-4. Execute GitHub Pages na aba Actions ou envie uma alteração para main.
-
-O workflow publica apenas as duas páginas públicas, os recursos visuais, a configuração da API e o JSON de demonstração. A gestão e o banco ficam fora do artefato do Pages.
+A demonstração é publicada a partir da raiz da branch `main`. Ela usa dados de exemplo e salva os cadastros no navegador. Para compartilhar resultados e usar a administração, execute a API Node.js conforme as instruções acima.
